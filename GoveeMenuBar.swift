@@ -39,9 +39,21 @@ class GoveeMenuBarApp: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Temperature: --.-°F", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Battery: --%", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
+        let graphItem = NSMenuItem(title: "24h Graph", action: #selector(openGraph), keyEquivalent: "g")
+        graphItem.target = self
+        menu.addItem(graphItem)
         menu.addItem(NSMenuItem(title: "Refresh Now", action: #selector(forceRefresh), keyEquivalent: "r"))
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
+    }
+
+    @objc func openGraph() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let scriptPath = "\(home)/govee_graph.py"
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/uv")
+        process.arguments = ["run", "--with", "redis", "python3", scriptPath]
+        try? process.run()
     }
     
     @objc func forceRefresh() {

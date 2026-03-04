@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 import redis
 from bleak import BleakScanner
 from govee_ble import GoveeBluetoothDeviceData
@@ -8,6 +9,11 @@ from home_assistant_bluetooth import BluetoothServiceInfo
 
 # Connect to local redis
 r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+
+HISTORY_KEY = "govee_history"
+HISTORY_TTL = 86400  # 24 hours in seconds
+HISTORY_INTERVAL = 60  # seconds between history entries
+_last_history_ts = 0
 
 def callback(device, adv):
     name = str(adv.local_name or device.name or "")
@@ -38,7 +44,20 @@ def callback(device, adv):
         
         # Store in redis for the widget to read
         r.set("govee_live_data", json.dumps(sensor_data))
-        
+
+        # Store history for 24h graph (one entry per minute)
+        global _last_history_ts
+        now = time.time()
+        if now - _last_history_ts >= HISTORY_INTERVAL:
+            history_entry = json.dumps({
+                "temperature": sensor_data.get("temperature"),
+                "humidity": sensor_data.get("humidity"),
+                "ts": now,
+            })
+            r.zadd(HISTORY_KEY, {history_entry: now})
+            r.zremrangebyscore(HISTORY_KEY, "-inf", now - HISTORY_TTL)
+            _last_history_ts = now
+
         # Also write to a local file for the Swift widget
         file_path = os.path.expanduser("~/govee_data.json")
         with open(file_path, "w") as f:
