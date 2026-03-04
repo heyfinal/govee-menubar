@@ -1,0 +1,5 @@
+govee_data.json
+GoveeMenuBarApp
+__pycache__/
+*.pyc
+.DS_Store
