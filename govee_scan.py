@@ -4,7 +4,7 @@ import asyncio
 from bleak import BleakScanner
 
 # Known non-Govee devices to skip
-SKIP_NAMES = {"[LG] webOS TV UK6500AUA", "dmg's iPhone"}
+SKIP_NAMES = set()  # add device names to skip here
 APPLE_MFR = 0x004C
 
 seen = {}
